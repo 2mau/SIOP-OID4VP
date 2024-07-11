@@ -7,6 +7,7 @@ import { RequestObject } from '../request-object';
 import {
   AuthorizationRequestPayload,
   getJwtVerifierWithContext,
+  getRequestObjectJwtVerifier,
   PassBy,
   RequestObjectJwt,
   RequestObjectPayload,
@@ -122,11 +123,19 @@ export class AuthorizationRequest {
     if (parsedJwt) {
       requestObjectPayload = parsedJwt.payload as RequestObjectPayload;
 
-      const jwtVerifier = await getJwtVerifierWithContext(parsedJwt, 'request-object');
+      const jwtVerifier = await getRequestObjectJwtVerifier({ ...parsedJwt, payload: requestObjectPayload }, { type: 'request-object', raw: jwt });
       const result = await opts.verifyJwtCallback(jwtVerifier, { ...parsedJwt, raw: jwt });
-
       if (!result) {
         throw Error(SIOPErrors.ERROR_VERIFYING_SIGNATURE);
+      }
+
+      // verify the verifier attestation
+      if (requestObjectPayload.client_id_scheme === 'verifier_attestation') {
+        const jwtVerifier = await getJwtVerifierWithContext(parsedJwt, { type: 'verifier-attestation' });
+        const result = await opts.verifyJwtCallback(jwtVerifier, { ...parsedJwt, raw: jwt });
+        if (!result) {
+          throw Error(SIOPErrors.ERROR_VERIFYING_SIGNATURE);
+        }
       }
 
       if (this.hasRequestObject() && !this.payload.request_uri) {

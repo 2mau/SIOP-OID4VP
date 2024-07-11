@@ -157,22 +157,22 @@ export class IDToken {
 
     const parsedJwt = parseJWT(this._jwt);
     this.assertValidResponseJWT(parsedJwt);
+    const idTokenPayload = parsedJwt.payload as IDTokenPayload;
 
-    const jwtVerifier = await getJwtVerifierWithContext(parsedJwt, 'request-object');
+    const jwtVerifier = await getJwtVerifierWithContext(parsedJwt, { type: 'id-token' });
     const verificationResult = await verifyOpts.verifyJwtCallback(jwtVerifier, { ...parsedJwt, raw: this._jwt });
     if (!verificationResult) {
       throw Error(SIOPErrors.ERROR_VERIFYING_SIGNATURE);
     }
 
-    const verPayload = parsedJwt.payload as IDTokenPayload;
-    this.assertValidResponseJWT({ header: parsedJwt.header, verPayload: verPayload, audience: verifyOpts.audience });
+    this.assertValidResponseJWT({ header: parsedJwt.header, verPayload: idTokenPayload, audience: verifyOpts.audience });
     // Enforces verifyPresentationCallback function on the RP side,
     if (!verifyOpts?.verification.presentationVerificationCallback) {
       throw new Error(SIOPErrors.VERIFIABLE_PRESENTATION_VERIFICATION_FUNCTION_MISSING);
     }
     return {
       jwt: this._jwt,
-      payload: { ...verPayload },
+      payload: { ...idTokenPayload },
       verifyOpts,
     };
   }

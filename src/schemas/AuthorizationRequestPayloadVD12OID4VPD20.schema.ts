@@ -1,9 +1,9 @@
-export const AuthorizationRequestPayloadVD12OID4VPD18SchemaObj = {
-  "$id": "AuthorizationRequestPayloadVD12OID4VPD18Schema",
+export const AuthorizationRequestPayloadVD12OID4VPD20SchemaObj = {
+  "$id": "AuthorizationRequestPayloadVD12OID4VPD20Schema",
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$ref": "#/definitions/AuthorizationRequestPayloadVD12OID4VPD18",
+  "$ref": "#/definitions/AuthorizationRequestPayloadVD12OID4VPD20",
   "definitions": {
-    "AuthorizationRequestPayloadVD12OID4VPD18": {
+    "AuthorizationRequestPayloadVD12OID4VPD20": {
       "type": "object",
       "properties": {
         "id_token_type": {
@@ -118,7 +118,7 @@ export const AuthorizationRequestPayloadVD12OID4VPD18SchemaObj = {
           "type": "string"
         },
         "client_id_scheme": {
-          "$ref": "#/definitions/ClientIdSchemeOID4VPD18"
+          "$ref": "#/definitions/ClientIdSchemeOID4VPD20"
         },
         "response_uri": {
           "type": "string"
@@ -1055,6 +1055,25 @@ export const AuthorizationRequestPayloadVD12OID4VPD18SchemaObj = {
         "type"
       ],
       "additionalProperties": false
+    },
+    "ClientIdSchemeOID4VPD20": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ClientIdSchemeOID4VPD18"
+        },
+        {
+          "type": "string",
+          "const": "x509_san_dns"
+        },
+        {
+          "type": "string",
+          "const": "x509_san_uri"
+        },
+        {
+          "type": "string",
+          "const": "verifier_attestation"
+        }
+      ]
     },
     "ClientIdSchemeOID4VPD18": {
       "type": "string",

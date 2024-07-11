@@ -1509,6 +1509,7 @@ export const AuthorizationResponseOptsSchemaObj = {
         70,
         110,
         180,
+        200,
         71
       ]
     },
@@ -1572,7 +1573,11 @@ export const AuthorizationResponseOptsSchemaObj = {
               "description": "The issuer jwt\n\nThis value will be used as the iss value of the issue jwt. It is also used as the client_id. And will also be set as the redirect_uri\n\nIt must match an entry in the x5c certificate leaf entry dnsName / uriName"
             },
             "clientIdScheme": {
-              "$ref": "#/definitions/ClientIdScheme"
+              "type": "string",
+              "enum": [
+                "x509_san_dns",
+                "x509_san_uri"
+              ]
             }
           },
           "required": [
@@ -1698,17 +1703,6 @@ export const AuthorizationResponseOptsSchemaObj = {
           ],
           "additionalProperties": false
         }
-      ]
-    },
-    "ClientIdScheme": {
-      "type": "string",
-      "enum": [
-        "pre-registered",
-        "redirect_uri",
-        "entity_id",
-        "did",
-        "x509_san_dns",
-        "x509_san_uri"
       ]
     },
     "PresentationExchangeResponseOpts": {

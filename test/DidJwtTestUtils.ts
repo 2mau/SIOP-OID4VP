@@ -113,7 +113,7 @@ export function getVerifyJwtCallback(
       jwtVerifier.type === 'request-object'
         ? verifyOpts?.audience ?? getAudience(jwt.raw)
         : jwtVerifier.type === 'id-token'
-          ? verifyOpts.audience
+          ? verifyOpts?.audience ?? getAudience(jwt.raw)
           : undefined;
 
     await verifyDidJWT(jwt.raw, resolver, { audience, ...verifyOpts });

@@ -10,6 +10,7 @@ export type JwtHeader = jwtDecodeJwtHeader & {
   x5c?: string[];
   kid?: string;
   jwk?: JsonWebKey;
+  jwt?: string;
 } & Record<string, unknown>;
 
 export type JwtPayload = jwtDecodePayload & {

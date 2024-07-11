@@ -2,7 +2,7 @@ import { AuthorizationResponseOpts } from '../authorization-response';
 import { JwtProtectionMethod, JwtType } from '../helpers/jwtUtils';
 
 import { JwtHeader, JwtPayload } from './JWT.types';
-import { ClientIdScheme, SigningAlgo } from './SIOP.types';
+import { SigningAlgo } from './SIOP.types';
 
 interface JwtIssuerBase {
   method: JwtProtectionMethod;
@@ -56,7 +56,7 @@ interface JwtIssuerX5c extends JwtIssuerBase {
    */
   issuer: string;
 
-  clientIdScheme: ClientIdScheme;
+  clientIdScheme: 'x509_san_dns' | 'x509_san_uri';
 }
 
 interface JwtIssuerJwk extends JwtIssuerBase {
