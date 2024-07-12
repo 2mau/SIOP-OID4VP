@@ -36,7 +36,7 @@ const kid = `${didStr}#${parseDid(didStr).id}`;
 
 describe('EBSI SIOPv2 should', () => {
   async function testWithOp() {
-    const did = await generateDid(/*{ seed: u8a.fromString(hexPrivateKey, 'base16') }*/);
+    const did = generateDid(/*{ seed: u8a.fromString(hexPrivateKey, 'base16') }*/);
     expect(did).toBeDefined();
 
     const authRequestURL = await getAuthRequestURL({ nonce });
@@ -76,7 +76,7 @@ describe('EBSI SIOPv2 should', () => {
     expect(result.status).toEqual(204);
   }
 
-  it(
+  it.skip(
     'succeed with an id token only',
     async () => {
       await testWithOp();

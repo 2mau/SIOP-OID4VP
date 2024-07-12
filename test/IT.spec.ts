@@ -2,7 +2,6 @@ import { EventEmitter } from 'events';
 
 import { IPresentationDefinition } from '@sphereon/pex';
 import { CredentialMapper, IPresentation, IProofType, IVerifiableCredential, W3CVerifiablePresentation } from '@sphereon/ssi-types';
-import { WDCErrors } from '@sphereon/wellknown-dids-client';
 import nock from 'nock';
 
 import {
@@ -239,17 +238,15 @@ describe('RP and OP interaction should', () => {
   );
 
   it('succeed when calling optional steps in the full flow', async () => {
-    // expect.assertions(1);
-    const rpMockEntity = {
-      hexPrivateKey: '2bbd6a78be9ab2193bcf74aa6d39ab59c1d1e2f7e9ef899a38fb4d94d8aa90e2',
-      did: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024',
-      didKey: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024#controllerKey',
-    };
-
+    const opMock = await mockedGetEnterpriseAuthToken('OP');
     const opMockEntity = {
-      hexPrivateKey: '73d24dd0fb69abdc12e7a99d8f9a970fdc8ad90598cc64cff35b584220ace0c8',
-      did: 'did:ethr:goerli:0x03a1370d4dd249eabb23245aeb4aec988fbca598ff83db59144d89b3835371daca',
-      didKey: 'did:ethr:goerli:0x03a1370d4dd249eabb23245aeb4aec988fbca598ff83db59144d89b3835371daca#controllerKey',
+      ...opMock,
+      didKey: `${opMock.did}#controller`,
+    };
+    const rpMock = await mockedGetEnterpriseAuthToken('RP');
+    const rpMockEntity = {
+      ...rpMock,
+      didKey: `${rpMock.did}#controller`,
     };
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -265,6 +262,7 @@ describe('RP and OP interaction should', () => {
       .withRevocationVerification(RevocationVerification.NEVER)
       .withRequestBy(PassBy.VALUE)
       .withCreateJwtCallback(internalSignature(rpMockEntity.hexPrivateKey, rpMockEntity.did, rpMockEntity.didKey, SigningAlgo.ES256K))
+      .withVerifyJwtCallback(getVerifyJwtCallback(resolver))
       .withClientMetadata({
         client_id: WELL_KNOWN_OPENID_FEDERATION,
         idTokenSigningAlgValuesSupported: [SigningAlgo.EDDSA],
@@ -336,16 +334,15 @@ describe('RP and OP interaction should', () => {
   });
 
   it('fail when calling with presentation definitions and without verifiable presentation', async () => {
-    const rpMockEntity = {
-      hexPrivateKey: '2bbd6a78be9ab2193bcf74aa6d39ab59c1d1e2f7e9ef899a38fb4d94d8aa90e2',
-      did: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024',
-      didKey: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024#controllerKey',
-    };
-
+    const opMock = await mockedGetEnterpriseAuthToken('OP');
     const opMockEntity = {
-      hexPrivateKey: '73d24dd0fb69abdc12e7a99d8f9a970fdc8ad90598cc64cff35b584220ace0c8',
-      did: 'did:ethr:goerli:0x03a1370d4dd249eabb23245aeb4aec988fbca598ff83db59144d89b3835371daca',
-      didKey: 'did:ethr:goerli:0x03a1370d4dd249eabb23245aeb4aec988fbca598ff83db59144d89b3835371daca#controllerKey',
+      ...opMock,
+      didKey: `${opMock.did}#controller`,
+    };
+    const rpMock = await mockedGetEnterpriseAuthToken('RP');
+    const rpMockEntity = {
+      ...rpMock,
+      didKey: `${rpMock.did}#controller`,
     };
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -429,16 +426,15 @@ describe('RP and OP interaction should', () => {
   });
 
   it('succeed when calling with presentation definitions and right verifiable presentation', async () => {
-    const rpMockEntity = {
-      hexPrivateKey: '2bbd6a78be9ab2193bcf74aa6d39ab59c1d1e2f7e9ef899a38fb4d94d8aa90e2',
-      did: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024',
-      didKey: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024#controllerKey',
-    };
-
+    const opMock = await mockedGetEnterpriseAuthToken('OP');
     const opMockEntity = {
-      hexPrivateKey: '73d24dd0fb69abdc12e7a99d8f9a970fdc8ad90598cc64cff35b584220ace0c8',
-      did: 'did:ethr:goerli:0x03a1370d4dd249eabb23245aeb4aec988fbca598ff83db59144d89b3835371daca',
-      didKey: 'did:ethr:goerli:0x03a1370d4dd249eabb23245aeb4aec988fbca598ff83db59144d89b3835371daca#controllerKey',
+      ...opMock,
+      didKey: `${opMock.did}#controller`,
+    };
+    const rpMock = await mockedGetEnterpriseAuthToken('RP');
+    const rpMockEntity = {
+      ...rpMock,
+      didKey: `${rpMock.did}#controller`,
     };
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -455,6 +451,7 @@ describe('RP and OP interaction should', () => {
       .withRevocationVerification(RevocationVerification.NEVER)
       .withRequestBy(PassBy.VALUE)
       .withCreateJwtCallback(internalSignature(rpMockEntity.hexPrivateKey, rpMockEntity.did, rpMockEntity.didKey, SigningAlgo.ES256K))
+      .withVerifyJwtCallback(getVerifyJwtCallback(resolver))
       .withAuthorizationEndpoint('www.myauthorizationendpoint.com')
       .withClientMetadata({
         client_id: WELL_KNOWN_OPENID_FEDERATION,
@@ -545,163 +542,34 @@ describe('RP and OP interaction should', () => {
     expect(verifiedAuthResponseWithJWT.idToken.payload.nonce).toMatch('qBrR7mqnY3Qr49dAZycPF8FzgE83m6H0c2l0bzP4xSg');
   });
 
-  it(
-    'should fail when calling with CheckLinkedDomain.ALWAYS',
-    async () => {
-      const rpMockEntity = {
-        hexPrivateKey: '2bbd6a78be9ab2193bcf74aa6d39ab59c1d1e2f7e9ef899a38fb4d94d8aa90e2',
-        did: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024',
-        didKey: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024#controllerKey',
-      };
-
-      const opMockEntity = {
-        hexPrivateKey: '73d24dd0fb69abdc12e7a99d8f9a970fdc8ad90598cc64cff35b584220ace0c8',
-        did: 'did:ethr:goerli:0x03a1370d4dd249eabb23245aeb4aec988fbca598ff83db59144d89b3835371daca',
-        didKey: 'did:ethr:goerli:0x03a1370d4dd249eabb23245aeb4aec988fbca598ff83db59144d89b3835371daca#controllerKey',
-      };
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const presentationVerificationCallback: PresentationVerificationCallback = async (_args) => ({ verified: true });
-
-      const resolver = getResolver('ethr');
-      const rp = RP.builder({ requestVersion: SupportedVersion.SIOPv2_ID1 })
-        .withClientId(rpMockEntity.did)
-        .withScope('test')
-        .withResponseType(ResponseType.ID_TOKEN)
-        .withPresentationVerification(presentationVerificationCallback)
-
-        .withRedirectUri(EXAMPLE_REDIRECT_URL)
-        .withRequestBy(PassBy.VALUE)
-        .withCreateJwtCallback(internalSignature(rpMockEntity.hexPrivateKey, rpMockEntity.did, rpMockEntity.didKey, SigningAlgo.ES256K))
-        .withVerifyJwtCallback(getVerifyJwtCallback(resolver, { checkLinkedDomain: 'always' }))
-        .withAuthorizationEndpoint('www.myauthorizationendpoint.com')
-        .withClientMetadata({
-          client_id: WELL_KNOWN_OPENID_FEDERATION,
-          idTokenSigningAlgValuesSupported: [SigningAlgo.EDDSA],
-          requestObjectSigningAlgValuesSupported: [SigningAlgo.EDDSA, SigningAlgo.ES256],
-          responseTypesSupported: [ResponseType.ID_TOKEN],
-          vpFormatsSupported: { jwt_vc: { alg: [SigningAlgo.EDDSA] } },
-          scopesSupported: [Scope.OPENID_DIDAUTHN, Scope.OPENID],
-          subjectTypesSupported: [SubjectType.PAIRWISE],
-          subject_syntax_types_supported: ['did', 'did:ethr'],
-          passBy: PassBy.VALUE,
-          logo_uri: VERIFIER_LOGO_FOR_CLIENT,
-          clientName: VERIFIER_NAME_FOR_CLIENT,
-          'clientName#nl-NL': VERIFIER_NAME_FOR_CLIENT_NL + '2022100324',
-          clientPurpose: VERIFIERZ_PURPOSE_TO_VERIFY,
-          'clientPurpose#nl-NL': VERIFIERZ_PURPOSE_TO_VERIFY_NL,
-        })
-        .withPresentationDefinition({ definition: getPresentationDefinition() }, [
-          PropertyTarget.REQUEST_OBJECT,
-          PropertyTarget.AUTHORIZATION_REQUEST,
-        ])
-        .withSupportedVersions(SupportedVersion.SIOPv2_ID1)
-        .build();
-      const op = OP.builder()
-        .withPresentationSignCallback(presentationSignCallback)
-        .withExpiresIn(1000)
-
-        .withVerifyJwtCallback(getVerifyJwtCallback(resolver))
-        .withCreateJwtCallback(internalSignature(opMockEntity.hexPrivateKey, opMockEntity.did, opMockEntity.didKey, SigningAlgo.ES256K))
-        .withRegistration({
-          authorizationEndpoint: 'www.myauthorizationendpoint.com',
-          idTokenSigningAlgValuesSupported: [SigningAlgo.EDDSA],
-          issuer: ResponseIss.SELF_ISSUED_V2,
-          requestObjectSigningAlgValuesSupported: [SigningAlgo.EDDSA, SigningAlgo.ES256],
-          responseTypesSupported: [ResponseType.ID_TOKEN],
-          vpFormats: { jwt_vc: { alg: [SigningAlgo.EDDSA] } },
-          scopesSupported: [Scope.OPENID_DIDAUTHN, Scope.OPENID],
-          subjectTypesSupported: [SubjectType.PAIRWISE],
-          subject_syntax_types_supported: ['did'],
-          passBy: PassBy.VALUE,
-          logo_uri: VERIFIER_LOGO_FOR_CLIENT,
-          clientName: VERIFIER_NAME_FOR_CLIENT,
-          'clientName#nl-NL': VERIFIER_NAME_FOR_CLIENT_NL + '2022100325',
-          clientPurpose: VERIFIERZ_PURPOSE_TO_VERIFY,
-          'clientPurpose#nl-NL': VERIFIERZ_PURPOSE_TO_VERIFY_NL,
-        })
-        .withSupportedVersions(SupportedVersion.SIOPv2_ID1)
-        .build();
-
-      const requestURI = await rp.createAuthorizationRequestURI({
-        correlationId: '1234',
-        nonce: 'qBrR7mqnY3Qr49dAZycPF8FzgE83m6H0c2l0bzP4xSg',
-        state: 'b32f0087fc9816eb813fd11f',
-      });
-
-      // Let's test the parsing
-      const parsedAuthReqURI = await op.parseAuthorizationRequestURI(requestURI.encodedUri);
-      expect(parsedAuthReqURI.authorizationRequestPayload).toBeDefined();
-      expect(parsedAuthReqURI.requestObjectJwt).toBeDefined();
-      // expect(parsedAuthReqURI.registration).toBeDefined();
-
-      const verifiedAuthReqWithJWT = await op.verifyAuthorizationRequest(parsedAuthReqURI.requestObjectJwt);
-      expect(verifiedAuthReqWithJWT.issuer).toMatch(rpMockEntity.did);
-      const pex = new PresentationExchange({ allDIDs: [HOLDER_DID], allVerifiableCredentials: getVCs() });
-      const pd: PresentationDefinitionWithLocation[] = await PresentationExchange.findValidPresentationDefinitions(
-        parsedAuthReqURI.authorizationRequestPayload,
-      );
-      await pex.selectVerifiableCredentialsForSubmission(pd[0].definition);
-      const verifiablePresentationResult = await pex.createVerifiablePresentation(pd[0].definition, getVCs(), presentationSignCallback, {});
-      const authenticationResponseWithJWT = await op.createAuthorizationResponse(verifiedAuthReqWithJWT, {
-        presentationExchange: {
-          verifiablePresentations: [verifiablePresentationResult.verifiablePresentation],
-          presentationSubmission: verifiablePresentationResult.presentationSubmission,
-          // vpTokenLocation: VPTokenLocation.AUTHORIZATION_RESPONSE,
-          /*credentialsAndDefinitions: [
-            {
-              presentation: verifiablePresentationResult,
-              format: VerifiablePresentationTypeFormat.LDP_VP,
-              vpTokenLocation: VPTokenLocation.AUTHORIZATION_RESPONSE,
-            },
-          ],*/
-        },
-      });
-      expect(authenticationResponseWithJWT.response.payload).toBeDefined();
-      await expect(
-        rp.verifyAuthorizationResponse(authenticationResponseWithJWT.response.payload, {
-          // audience: EXAMPLE_REDIRECT_URL,
-          presentationDefinitions: [{ definition: pd[0].definition, location: pd[0].location }],
-          verification: {
-            revocationOpts: {
-              revocationVerification: RevocationVerification.ALWAYS,
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              revocationVerificationCallback: (_credential, _type) => Promise.resolve({ status: RevocationStatus.VALID }),
-            },
-          },
-        }),
-      ).rejects.toThrow(new Error(WDCErrors.PROPERTY_SERVICE_NOT_PRESENT));
-    },
-    UNIT_TEST_TIMEOUT,
-  );
-
-  it('succeed when calling with CheckLinkedDomain.ALWAYS', async () => {
-    const rpMockEntity = {
-      hexPrivateKey: '2bbd6a78be9ab2193bcf74aa6d39ab59c1d1e2f7e9ef899a38fb4d94d8aa90e2',
-      did: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024',
-      didKey: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024#controllerKey',
-    };
-
+  it('succeed when calling with RevocationVerification.ALWAYS with ldp_vp', async () => {
+    const opMock = await mockedGetEnterpriseAuthToken('OP');
     const opMockEntity = {
-      hexPrivateKey: '88a62d50de38dc22f5b4e7cc80d68a0f421ea489dda0e3bd5c165f08ce46e666',
-      did: 'did:ion:EiCMvVdXv6iL3W8i4n-LmqUhE614kX4TYxVR5kTY2QGOjg:eyJkZWx0YSI6eyJwYXRjaGVzIjpbeyJhY3Rpb24iOiJyZXBsYWNlIiwiZG9jdW1lbnQiOnsicHVibGljS2V5cyI6W3siaWQiOiJrZXkxIiwicHVibGljS2V5SndrIjp7ImNydiI6InNlY3AyNTZrMSIsImt0eSI6IkVDIiwieCI6Ii1MbHNpQVk5b3JmMXpKQlJOV0NuN0RpNUpoYl8tY2xhNlY5R3pHa3FmSFUiLCJ5IjoiRXBIU25GZHQ2ZU5lRkJEZzNVNVFIVDE0TVRsNHZIc0h5NWRpWU9DWEs1TSJ9LCJwdXJwb3NlcyI6WyJhdXRoZW50aWNhdGlvbiIsImFzc2VydGlvbk1ldGhvZCJdLCJ0eXBlIjoiRWNkc2FTZWNwMjU2azFWZXJpZmljYXRpb25LZXkyMDE5In1dLCJzZXJ2aWNlcyI6W3siaWQiOiJsZCIsInNlcnZpY2VFbmRwb2ludCI6Imh0dHBzOi8vbGR0ZXN0LnNwaGVyZW9uLmNvbSIsInR5cGUiOiJMaW5rZWREb21haW5zIn1dfX1dLCJ1cGRhdGVDb21taXRtZW50IjoiRWlBem8wTVVZUW5HNWM0VFJKZVFsNFR5WVRrSmRyeTJoeXlQUlpENzdFQm1CdyJ9LCJzdWZmaXhEYXRhIjp7ImRlbHRhSGFzaCI6IkVpQUwtaEtrLUVsODNsRVJiZkFDUk1kSWNQVjRXWGJqZ3dsZ1ZDWTNwbDhhMGciLCJyZWNvdmVyeUNvbW1pdG1lbnQiOiJFaUItT2NSbTlTNXdhU3QxbU4zSG4zM2RnMzJKN25MOEdBVHpGQ2ZXaWdIXzh3In19',
-      didKey:
-        'did:ion:EiCMvVdXv6iL3W8i4n-LmqUhE614kX4TYxVR5kTY2QGOjg:eyJkZWx0YSI6eyJwYXRjaGVzIjpbeyJhY3Rpb24iOiJyZXBsYWNlIiwiZG9jdW1lbnQiOnsicHVibGljS2V5cyI6W3siaWQiOiJrZXkxIiwicHVibGljS2V5SndrIjp7ImNydiI6InNlY3AyNTZrMSIsImt0eSI6IkVDIiwieCI6Ii1MbHNpQVk5b3JmMXpKQlJOV0NuN0RpNUpoYl8tY2xhNlY5R3pHa3FmSFUiLCJ5IjoiRXBIU25GZHQ2ZU5lRkJEZzNVNVFIVDE0TVRsNHZIc0h5NWRpWU9DWEs1TSJ9LCJwdXJwb3NlcyI6WyJhdXRoZW50aWNhdGlvbiIsImFzc2VydGlvbk1ldGhvZCJdLCJ0eXBlIjoiRWNkc2FTZWNwMjU2azFWZXJpZmljYXRpb25LZXkyMDE5In1dLCJzZXJ2aWNlcyI6W3siaWQiOiJsZCIsInNlcnZpY2VFbmRwb2ludCI6Imh0dHBzOi8vbGR0ZXN0LnNwaGVyZW9uLmNvbSIsInR5cGUiOiJMaW5rZWREb21haW5zIn1dfX1dLCJ1cGRhdGVDb21taXRtZW50IjoiRWlBem8wTVVZUW5HNWM0VFJKZVFsNFR5WVRrSmRyeTJoeXlQUlpENzdFQm1CdyJ9LCJzdWZmaXhEYXRhIjp7ImRlbHRhSGFzaCI6IkVpQUwtaEtrLUVsODNsRVJiZkFDUk1kSWNQVjRXWGJqZ3dsZ1ZDWTNwbDhhMGciLCJyZWNvdmVyeUNvbW1pdG1lbnQiOiJFaUItT2NSbTlTNXdhU3QxbU4zSG4zM2RnMzJKN25MOEdBVHpGQ2ZXaWdIXzh3In19#key1',
+      ...opMock,
+      didKey: `${opMock.did}#controller`,
+    };
+    const rpMock = await mockedGetEnterpriseAuthToken('RP');
+    const rpMockEntity = {
+      ...rpMock,
+      didKey: `${rpMock.did}#controller`,
     };
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const presentationVerificationCallback: PresentationVerificationCallback = async (_args) => ({ verified: true });
-
     const resolver = getResolver('ethr');
     const rp = RP.builder({ requestVersion: SupportedVersion.SIOPv2_ID1 })
-      .withClientId(rpMockEntity.did)
+      .withClientId('test_client_id')
       .withScope('test')
-      .withResponseType([ResponseType.ID_TOKEN, ResponseType.VP_TOKEN])
+      .withResponseType([ResponseType.VP_TOKEN, ResponseType.ID_TOKEN])
+      .withRevocationVerification(RevocationVerification.ALWAYS)
       .withPresentationVerification(presentationVerificationCallback)
-
-      .withRevocationVerification(RevocationVerification.NEVER)
+      .withRevocationVerificationCallback(async () => {
+        return { status: RevocationStatus.VALID };
+      })
       .withRedirectUri(EXAMPLE_REDIRECT_URL)
       .withRequestBy(PassBy.VALUE)
       .withCreateJwtCallback(internalSignature(rpMockEntity.hexPrivateKey, rpMockEntity.did, rpMockEntity.didKey, SigningAlgo.ES256K))
+      .withVerifyJwtCallback(getVerifyJwtCallback(resolver))
       .withAuthorizationEndpoint('www.myauthorizationendpoint.com')
       .withClientMetadata({
         client_id: WELL_KNOWN_OPENID_FEDERATION,
@@ -710,6 +578,7 @@ describe('RP and OP interaction should', () => {
         responseTypesSupported: [ResponseType.ID_TOKEN],
         vpFormatsSupported: {
           jwt_vc: { alg: [SigningAlgo.EDDSA] },
+          jwt_vp: { alg: [SigningAlgo.EDDSA] },
           ldp_vc: { proof_type: [IProofType.EcdsaSecp256k1Signature2019, IProofType.EcdsaSecp256k1Signature2019] },
           ldp_vp: { proof_type: [IProofType.EcdsaSecp256k1Signature2019, IProofType.EcdsaSecp256k1Signature2019] },
           ldp: { proof_type: [IProofType.EcdsaSecp256k1Signature2019, IProofType.EcdsaSecp256k1Signature2019] },
@@ -720,19 +589,20 @@ describe('RP and OP interaction should', () => {
         passBy: PassBy.VALUE,
         logo_uri: VERIFIER_LOGO_FOR_CLIENT,
         clientName: VERIFIER_NAME_FOR_CLIENT,
-        'clientName#nl-NL': VERIFIER_NAME_FOR_CLIENT_NL + '2022100326',
+        'clientName#nl-NL': VERIFIER_NAME_FOR_CLIENT_NL + '2022100330',
         clientPurpose: VERIFIERZ_PURPOSE_TO_VERIFY,
         'clientPurpose#nl-NL': VERIFIERZ_PURPOSE_TO_VERIFY_NL,
       })
       .withPresentationDefinition({ definition: getPresentationDefinition() }, [PropertyTarget.REQUEST_OBJECT, PropertyTarget.AUTHORIZATION_REQUEST])
       .withSupportedVersions(SupportedVersion.SIOPv2_ID1)
       .build();
+
     const op = OP.builder()
       .withPresentationSignCallback(presentationSignCallback)
-
       .withExpiresIn(1000)
-      .withVerifyJwtCallback(getVerifyJwtCallback(resolver, { checkLinkedDomain: 'always' }))
       .withCreateJwtCallback(internalSignature(opMockEntity.hexPrivateKey, opMockEntity.did, opMockEntity.didKey, SigningAlgo.ES256K))
+      .withVerifyJwtCallback(getVerifyJwtCallback(resolver))
+      .withPresentationSignCallback(presentationSignCallback)
       .withRegistration({
         authorizationEndpoint: 'www.myauthorizationendpoint.com',
         idTokenSigningAlgValuesSupported: [SigningAlgo.ES256K],
@@ -741,19 +611,20 @@ describe('RP and OP interaction should', () => {
         responseTypesSupported: [ResponseType.ID_TOKEN],
         vpFormats: {
           jwt_vc: { alg: [SigningAlgo.EDDSA] },
+          jwt_vp: { alg: [SigningAlgo.EDDSA] },
           ldp_vc: { proof_type: [IProofType.EcdsaSecp256k1Signature2019, IProofType.EcdsaSecp256k1Signature2019] },
           ldp_vp: { proof_type: [IProofType.EcdsaSecp256k1Signature2019, IProofType.EcdsaSecp256k1Signature2019] },
           ldp: { proof_type: [IProofType.EcdsaSecp256k1Signature2019, IProofType.EcdsaSecp256k1Signature2019] },
         },
-        logo_uri: VERIFIER_LOGO_FOR_CLIENT,
-        clientName: VERIFIER_NAME_FOR_CLIENT,
-        'clientName#nl-NL': VERIFIER_NAME_FOR_CLIENT_NL + '2022100327',
-        clientPurpose: VERIFIERZ_PURPOSE_TO_VERIFY,
-        'clientPurpose#nl-NL': VERIFIERZ_PURPOSE_TO_VERIFY_NL,
         scopesSupported: [Scope.OPENID_DIDAUTHN, Scope.OPENID],
         subjectTypesSupported: [SubjectType.PAIRWISE],
-        subject_syntax_types_supported: ['did:ethr'],
+        subject_syntax_types_supported: [],
         passBy: PassBy.VALUE,
+        logo_uri: VERIFIER_LOGO_FOR_CLIENT,
+        clientName: VERIFIER_NAME_FOR_CLIENT,
+        'clientName#nl-NL': VERIFIER_NAME_FOR_CLIENT_NL + '2022100331',
+        clientPurpose: VERIFIERZ_PURPOSE_TO_VERIFY,
+        'clientPurpose#nl-NL': VERIFIERZ_PURPOSE_TO_VERIFY_NL,
       })
       .withSupportedVersions(SupportedVersion.SIOPv2_ID1)
       .build();
@@ -764,20 +635,23 @@ describe('RP and OP interaction should', () => {
       state: 'b32f0087fc9816eb813fd11f',
     });
 
+    await checkSIOPSpecVersionSupported(requestURI.authorizationRequestPayload, op.verifyRequestOptions.supportedVersions);
     // Let's test the parsing
     const parsedAuthReqURI = await op.parseAuthorizationRequestURI(requestURI.encodedUri);
     expect(parsedAuthReqURI.authorizationRequestPayload).toBeDefined();
     expect(parsedAuthReqURI.requestObjectJwt).toBeDefined();
     // expect(parsedAuthReqURI.registration).toBeDefined();
 
-    const verifiedAuthReqWithJWT = await op.verifyAuthorizationRequest(parsedAuthReqURI.requestObjectJwt);
+    const verifiedAuthReqWithJWT = await op.verifyAuthorizationRequest(parsedAuthReqURI.requestObjectJwt); //, rp.authRequestOpts
     expect(verifiedAuthReqWithJWT.issuer).toMatch(rpMockEntity.did);
+
     const pex = new PresentationExchange({ allDIDs: [HOLDER_DID], allVerifiableCredentials: getVCs() });
     const pd: PresentationDefinitionWithLocation[] = await PresentationExchange.findValidPresentationDefinitions(
       parsedAuthReqURI.authorizationRequestPayload,
     );
     await pex.selectVerifiableCredentialsForSubmission(pd[0].definition);
     const verifiablePresentationResult = await pex.createVerifiablePresentation(pd[0].definition, getVCs(), presentationSignCallback, {});
+
     const authenticationResponseWithJWT = await op.createAuthorizationResponse(verifiedAuthReqWithJWT, {
       presentationExchange: {
         verifiablePresentations: [verifiablePresentationResult.verifiablePresentation],
@@ -793,6 +667,7 @@ describe('RP and OP interaction should', () => {
       },
     });
     expect(authenticationResponseWithJWT.response.payload).toBeDefined();
+    expect(authenticationResponseWithJWT.response.idToken).toBeDefined();
 
     const DID_CONFIGURATION = {
       '@context': 'https://identity.foundation/.well-known/did-configuration/v1',
@@ -813,16 +688,15 @@ describe('RP and OP interaction should', () => {
   it(
     'should succeed when calling with CheckLinkedDomain.IF_PRESENT',
     async () => {
-      const rpMockEntity = {
-        hexPrivateKey: '2bbd6a78be9ab2193bcf74aa6d39ab59c1d1e2f7e9ef899a38fb4d94d8aa90e2',
-        did: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024',
-        didKey: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024#controllerKey',
-      };
-
+      const opMock = await mockedGetEnterpriseAuthToken('OP');
       const opMockEntity = {
-        hexPrivateKey: '73d24dd0fb69abdc12e7a99d8f9a970fdc8ad90598cc64cff35b584220ace0c8',
-        did: 'did:ethr:goerli:0x03a1370d4dd249eabb23245aeb4aec988fbca598ff83db59144d89b3835371daca',
-        didKey: 'did:ethr:goerli:0x03a1370d4dd249eabb23245aeb4aec988fbca598ff83db59144d89b3835371daca#controllerKey',
+        ...opMock,
+        didKey: `${opMock.did}#controller`,
+      };
+      const rpMock = await mockedGetEnterpriseAuthToken('RP');
+      const rpMockEntity = {
+        ...rpMock,
+        didKey: `${rpMock.did}#controller`,
       };
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -936,16 +810,15 @@ describe('RP and OP interaction should', () => {
   );
 
   it('succeed when calling with RevocationVerification.ALWAYS with ldp_vp', async () => {
-    const rpMockEntity = {
-      hexPrivateKey: '2bbd6a78be9ab2193bcf74aa6d39ab59c1d1e2f7e9ef899a38fb4d94d8aa90e2',
-      did: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024',
-      didKey: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024#controllerKey',
-    };
-
+    const opMock = await mockedGetEnterpriseAuthToken('OP');
     const opMockEntity = {
-      hexPrivateKey: '73d24dd0fb69abdc12e7a99d8f9a970fdc8ad90598cc64cff35b584220ace0c8',
-      did: 'did:ethr:goerli:0x03a1370d4dd249eabb23245aeb4aec988fbca598ff83db59144d89b3835371daca',
-      didKey: 'did:ethr:goerli:0x03a1370d4dd249eabb23245aeb4aec988fbca598ff83db59144d89b3835371daca#controllerKey',
+      ...opMock,
+      didKey: `${opMock.did}#controller`,
+    };
+    const rpMock = await mockedGetEnterpriseAuthToken('RP');
+    const rpMockEntity = {
+      ...rpMock,
+      didKey: `${rpMock.did}#controller`,
     };
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -964,6 +837,7 @@ describe('RP and OP interaction should', () => {
       .withRedirectUri(EXAMPLE_REDIRECT_URL)
       .withRequestBy(PassBy.VALUE)
       .withCreateJwtCallback(internalSignature(rpMockEntity.hexPrivateKey, rpMockEntity.did, rpMockEntity.didKey, SigningAlgo.ES256K))
+      .withVerifyJwtCallback(getVerifyJwtCallback(resolver))
       .withAuthorizationEndpoint('www.myauthorizationendpoint.com')
       .withClientMetadata({
         client_id: WELL_KNOWN_OPENID_FEDERATION,
@@ -1062,6 +936,140 @@ describe('RP and OP interaction should', () => {
     });
     expect(authenticationResponseWithJWT.response.payload).toBeDefined();
     expect(authenticationResponseWithJWT.response.idToken).toBeDefined();
+
+    const DID_CONFIGURATION = {
+      '@context': 'https://identity.foundation/.well-known/did-configuration/v1',
+      linked_dids: [
+        'eyJhbGciOiJSUzI1NiIsImtpZCI6ImRpZDprZXk6ejZNa29USHNnTk5yYnk4SnpDTlExaVJMeVc1UVE2UjhYdXU2QUE4aWdHck1WUFVNI3o2TWtvVEhzZ05OcmJ5OEp6Q05RMWlSTHlXNVFRNlI4WHV1NkFBOGlnR3JNVlBVTSJ9.eyJleHAiOjE3NjQ4NzkxMzksImlzcyI6ImRpZDprZXk6ejZNa29USHNnTk5yYnk4SnpDTlExaVJMeVc1UVE2UjhYdXU2QUE4aWdHck1WUFVNIiwibmJmIjoxNjA3MTEyNzM5LCJzdWIiOiJkaWQ6a2V5Ono2TWtvVEhzZ05OcmJ5OEp6Q05RMWlSTHlXNVFRNlI4WHV1NkFBOGlnR3JNVlBVTSIsInZjIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIiwiaHR0cHM6Ly9pZGVudGl0eS5mb3VuZGF0aW9uLy53ZWxsLWtub3duL2RpZC1jb25maWd1cmF0aW9uL3YxIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7ImlkIjoiZGlkOmtleTp6Nk1rb1RIc2dOTnJieThKekNOUTFpUkx5VzVRUTZSOFh1dTZBQThpZ0dyTVZQVU0iLCJvcmlnaW4iOiJodHRwczovL2lkZW50aXR5LmZvdW5kYXRpb24ifSwiZXhwaXJhdGlvbkRhdGUiOiIyMDI1LTEyLTA0VDE0OjEyOjE5LTA2OjAwIiwiaXNzdWFuY2VEYXRlIjoiMjAyMC0xMi0wNFQxNDoxMjoxOS0wNjowMCIsImlzc3VlciI6ImRpZDprZXk6ejZNa29USHNnTk5yYnk4SnpDTlExaVJMeVc1UVE2UjhYdXU2QUE4aWdHck1WUFVNIiwidHlwZSI6WyJWZXJpZmlhYmxlQ3JlZGVudGlhbCIsIkRvbWFpbkxpbmthZ2VDcmVkZW50aWFsIl19fQ.YZnpPMAW3GdaPXC2YKoJ7Igt1OaVZKq09XZBkptyhxTAyHTkX2Ewtew-JKHKQjyDyabY3HAy1LUPoIQX0jrU0J82pIYT3k2o7nNTdLbxlgb49FcDn4czntt5SbY0m1XwrMaKEvV0bHQsYPxNTqjYsyySccgPfmvN9IT8gRS-M9a6MZQxuB3oEMrVOQ5Vco0bvTODXAdCTHibAk1FlvKz0r1vO5QMhtW4OlRrVTI7ibquf9Nim_ch0KeMMThFjsBDKetuDF71nUcL5sf7PCFErvl8ZVw3UK4NkZ6iM-XIRsLL6rXP2SnDUVovcldhxd_pyKEYviMHBOgBdoNP6fOgRQ',
+        'eyJhbGciOiJSUzI1NiIsImtpZCI6ImRpZDprZXk6ejZNa29USHNnTk5yYnk4SnpDTlExaVJMeVc1UVE2UjhYdXU2QUE4aWdHck1WUFVNI3o2TWtvVEhzZ05OcmJ5OEp6Q05RMWlSTHlXNVFRNlI4WHV1NkFBOGlnR3JNVlBVTSJ9.eyJleHAiOjE3NjQ4NzkxMzksImlzcyI6ImRpZDprZXk6b3RoZXIiLCJuYmYiOjE2MDcxMTI3MzksInN1YiI6ImRpZDprZXk6b3RoZXIiLCJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vaWRlbnRpdHkuZm91bmRhdGlvbi8ud2VsbC1rbm93bi9kaWQtY29uZmlndXJhdGlvbi92MSJdLCJjcmVkZW50aWFsU3ViamVjdCI6eyJpZCI6ImRpZDprZXk6b3RoZXIiLCJvcmlnaW4iOiJodHRwczovL2lkZW50aXR5LmZvdW5kYXRpb24ifSwiZXhwaXJhdGlvbkRhdGUiOiIyMDI1LTEyLTA0VDE0OjEyOjE5LTA2OjAwIiwiaXNzdWFuY2VEYXRlIjoiMjAyMC0xMi0wNFQxNDoxMjoxOS0wNjowMCIsImlzc3VlciI6ImRpZDprZXk6b3RoZXIiLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIiwiRG9tYWluTGlua2FnZUNyZWRlbnRpYWwiXX19.rRuc-ojuEgyq8p_tBYK7BayuiNTBeXNyAnC14Rnjs-jsnhae4_E1Q12W99K2NGCGBi5KjNsBcZmdNJPxejiKPrjjcB99poFCgTY8tuRzDjVo0lIeBwfx9qqjKHTRTUR8FGM_imlOpVfBF4AHYxjkHvZn6c9lYvatYcDpB2UfH4BNXkdSVrUXy_kYjpMpAdRtyCAnD_isN1YpEHBqBmnfuVUbYcQK5kk6eiokRFDtWruL1OEeJMYPqjuBSd2m-H54tSM84Oic_pg2zXDjjBlXNelat6MPNT2QxmkwJg7oyewQWX2Ot2yyhSp9WyAQWMlQIe2x84R0lADUmZ1TPQchNw',
+      ],
+    };
+    nock('https://ldtest.sphereon.com').get('/.well-known/did-configuration.json').times(3).reply(200, DID_CONFIGURATION);
+    const verifiedAuthResponseWithJWT = await rp.verifyAuthorizationResponse(authenticationResponseWithJWT.response.payload, {
+      presentationDefinitions: [{ definition: pd[0].definition, location: pd[0].location }],
+      // audience: EXAMPLE_REDIRECT_URL,
+    });
+    expect(verifiedAuthResponseWithJWT.idToken.jwt).toBeDefined();
+    expect(verifiedAuthResponseWithJWT.idToken.payload.nonce).toMatch('qBrR7mqnY3Qr49dAZycPF8FzgE83m6H0c2l0bzP4xSg');
+  });
+
+  it('succeed when calling with CheckLinkedDomain.ALWAYS', async () => {
+    const opMock = await mockedGetEnterpriseAuthToken('OP');
+    const opMockEntity = {
+      ...opMock,
+      didKey: `${opMock.did}#controller`,
+    };
+    const rpMock = await mockedGetEnterpriseAuthToken('RP');
+    const rpMockEntity = {
+      ...rpMock,
+      didKey: `${rpMock.did}#controller`,
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const presentationVerificationCallback: PresentationVerificationCallback = async (_args) => ({ verified: true });
+
+    const resolver = getResolver('ethr');
+    const rp = RP.builder({ requestVersion: SupportedVersion.SIOPv2_ID1 })
+      .withClientId(rpMockEntity.did)
+      .withScope('test')
+      .withResponseType([ResponseType.ID_TOKEN, ResponseType.VP_TOKEN])
+      .withPresentationVerification(presentationVerificationCallback)
+      .withRevocationVerification(RevocationVerification.NEVER)
+      .withRedirectUri(EXAMPLE_REDIRECT_URL)
+      .withRequestBy(PassBy.VALUE)
+      .withCreateJwtCallback(internalSignature(rpMockEntity.hexPrivateKey, rpMockEntity.did, rpMockEntity.didKey, SigningAlgo.ES256K))
+      .withVerifyJwtCallback(getVerifyJwtCallback(resolver, { checkLinkedDomain: 'always' }))
+      .withAuthorizationEndpoint('www.myauthorizationendpoint.com')
+      .withClientMetadata({
+        client_id: WELL_KNOWN_OPENID_FEDERATION,
+        idTokenSigningAlgValuesSupported: [SigningAlgo.ES256K],
+        requestObjectSigningAlgValuesSupported: [SigningAlgo.ES256K],
+        responseTypesSupported: [ResponseType.ID_TOKEN],
+        vpFormatsSupported: {
+          jwt_vc: { alg: [SigningAlgo.EDDSA] },
+          ldp_vc: { proof_type: [IProofType.EcdsaSecp256k1Signature2019, IProofType.EcdsaSecp256k1Signature2019] },
+          ldp_vp: { proof_type: [IProofType.EcdsaSecp256k1Signature2019, IProofType.EcdsaSecp256k1Signature2019] },
+          ldp: { proof_type: [IProofType.EcdsaSecp256k1Signature2019, IProofType.EcdsaSecp256k1Signature2019] },
+        },
+        scopesSupported: [Scope.OPENID_DIDAUTHN, Scope.OPENID],
+        subjectTypesSupported: [SubjectType.PAIRWISE],
+        subject_syntax_types_supported: ['did', 'did:ion'],
+        passBy: PassBy.VALUE,
+        logo_uri: VERIFIER_LOGO_FOR_CLIENT,
+        clientName: VERIFIER_NAME_FOR_CLIENT,
+        'clientName#nl-NL': VERIFIER_NAME_FOR_CLIENT_NL + '2022100326',
+        clientPurpose: VERIFIERZ_PURPOSE_TO_VERIFY,
+        'clientPurpose#nl-NL': VERIFIERZ_PURPOSE_TO_VERIFY_NL,
+      })
+      .withPresentationDefinition({ definition: getPresentationDefinition() }, [PropertyTarget.REQUEST_OBJECT, PropertyTarget.AUTHORIZATION_REQUEST])
+      .withSupportedVersions(SupportedVersion.SIOPv2_ID1)
+      .build();
+    const op = OP.builder()
+      .withPresentationSignCallback(presentationSignCallback)
+
+      .withExpiresIn(1000)
+      .withVerifyJwtCallback(getVerifyJwtCallback(resolver, { checkLinkedDomain: 'always' }))
+      .withCreateJwtCallback(internalSignature(opMockEntity.hexPrivateKey, opMockEntity.did, opMockEntity.didKey, SigningAlgo.ES256K))
+      .withRegistration({
+        authorizationEndpoint: 'www.myauthorizationendpoint.com',
+        idTokenSigningAlgValuesSupported: [SigningAlgo.ES256K],
+        issuer: ResponseIss.SELF_ISSUED_V2,
+        requestObjectSigningAlgValuesSupported: [SigningAlgo.ES256K],
+        responseTypesSupported: [ResponseType.ID_TOKEN],
+        vpFormats: {
+          jwt_vc: { alg: [SigningAlgo.EDDSA] },
+          ldp_vc: { proof_type: [IProofType.EcdsaSecp256k1Signature2019, IProofType.EcdsaSecp256k1Signature2019] },
+          ldp_vp: { proof_type: [IProofType.EcdsaSecp256k1Signature2019, IProofType.EcdsaSecp256k1Signature2019] },
+          ldp: { proof_type: [IProofType.EcdsaSecp256k1Signature2019, IProofType.EcdsaSecp256k1Signature2019] },
+        },
+        logo_uri: VERIFIER_LOGO_FOR_CLIENT,
+        clientName: VERIFIER_NAME_FOR_CLIENT,
+        'clientName#nl-NL': VERIFIER_NAME_FOR_CLIENT_NL + '2022100327',
+        clientPurpose: VERIFIERZ_PURPOSE_TO_VERIFY,
+        'clientPurpose#nl-NL': VERIFIERZ_PURPOSE_TO_VERIFY_NL,
+        scopesSupported: [Scope.OPENID_DIDAUTHN, Scope.OPENID],
+        subjectTypesSupported: [SubjectType.PAIRWISE],
+        subject_syntax_types_supported: ['did:ethr'],
+        passBy: PassBy.VALUE,
+      })
+      .withSupportedVersions(SupportedVersion.SIOPv2_ID1)
+      .build();
+
+    const requestURI = await rp.createAuthorizationRequestURI({
+      correlationId: '1234',
+      nonce: 'qBrR7mqnY3Qr49dAZycPF8FzgE83m6H0c2l0bzP4xSg',
+      state: 'b32f0087fc9816eb813fd11f',
+    });
+
+    // Let's test the parsing
+    const parsedAuthReqURI = await op.parseAuthorizationRequestURI(requestURI.encodedUri);
+    expect(parsedAuthReqURI.authorizationRequestPayload).toBeDefined();
+    expect(parsedAuthReqURI.requestObjectJwt).toBeDefined();
+    // expect(parsedAuthReqURI.registration).toBeDefined();
+
+    const verifiedAuthReqWithJWT = await op.verifyAuthorizationRequest(parsedAuthReqURI.requestObjectJwt);
+    expect(verifiedAuthReqWithJWT.issuer).toMatch(rpMockEntity.did);
+    const pex = new PresentationExchange({ allDIDs: [HOLDER_DID], allVerifiableCredentials: getVCs() });
+    const pd: PresentationDefinitionWithLocation[] = await PresentationExchange.findValidPresentationDefinitions(
+      parsedAuthReqURI.authorizationRequestPayload,
+    );
+    await pex.selectVerifiableCredentialsForSubmission(pd[0].definition);
+    const verifiablePresentationResult = await pex.createVerifiablePresentation(pd[0].definition, getVCs(), presentationSignCallback, {});
+    const authenticationResponseWithJWT = await op.createAuthorizationResponse(verifiedAuthReqWithJWT, {
+      presentationExchange: {
+        verifiablePresentations: [verifiablePresentationResult.verifiablePresentation],
+        presentationSubmission: verifiablePresentationResult.presentationSubmission,
+        vpTokenLocation: VPTokenLocation.AUTHORIZATION_RESPONSE,
+        /*credentialsAndDefinitions: [
+          {
+            presentation: vp,
+            format: VerifiablePresentationTypeFormat.LDP_VP,
+            vpTokenLocation: VPTokenLocation.AUTHORIZATION_RESPONSE,
+          },
+        ],*/
+      },
+    });
+    expect(authenticationResponseWithJWT.response.payload).toBeDefined();
 
     const DID_CONFIGURATION = {
       '@context': 'https://identity.foundation/.well-known/did-configuration/v1',
@@ -1237,16 +1245,15 @@ describe('RP and OP interaction should', () => {
   });
 
   it('should verify revocation ldp_vp with location id_token', async () => {
-    const rpMockEntity = {
-      hexPrivateKey: '2bbd6a78be9ab2193bcf74aa6d39ab59c1d1e2f7e9ef899a38fb4d94d8aa90e2',
-      did: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024',
-      didKey: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024#controllerKey',
-    };
-
+    const opMock = await mockedGetEnterpriseAuthToken('OP');
     const opMockEntity = {
-      hexPrivateKey: '73d24dd0fb69abdc12e7a99d8f9a970fdc8ad90598cc64cff35b584220ace0c8',
-      did: 'did:ethr:goerli:0x03a1370d4dd249eabb23245aeb4aec988fbca598ff83db59144d89b3835371daca',
-      didKey: 'did:ethr:goerli:0x03a1370d4dd249eabb23245aeb4aec988fbca598ff83db59144d89b3835371daca#controllerKey',
+      ...opMock,
+      didKey: `${opMock.did}#controller`,
+    };
+    const rpMock = await mockedGetEnterpriseAuthToken('RP');
+    const rpMockEntity = {
+      ...rpMock,
+      didKey: `${rpMock.did}#controller`,
     };
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1262,6 +1269,7 @@ describe('RP and OP interaction should', () => {
       .withRedirectUri(EXAMPLE_REDIRECT_URL)
       .withRequestBy(PassBy.VALUE)
       .withCreateJwtCallback(internalSignature(rpMockEntity.hexPrivateKey, rpMockEntity.did, rpMockEntity.didKey, SigningAlgo.ES256K))
+      .withVerifyJwtCallback(getVerifyJwtCallback(resolver))
       .withAuthorizationEndpoint('www.myauthorizationendpoint.com')
       .withClientMetadata({
         client_id: WELL_KNOWN_OPENID_FEDERATION,
@@ -1359,16 +1367,15 @@ describe('RP and OP interaction should', () => {
   });
 
   it('succeed with nonce verification with ldp_vp', async () => {
-    const rpMockEntity = {
-      hexPrivateKey: '2bbd6a78be9ab2193bcf74aa6d39ab59c1d1e2f7e9ef899a38fb4d94d8aa90e2',
-      did: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024',
-      didKey: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024#controllerKey',
-    };
-
+    const opMock = await mockedGetEnterpriseAuthToken('OP');
     const opMockEntity = {
-      hexPrivateKey: '73d24dd0fb69abdc12e7a99d8f9a970fdc8ad90598cc64cff35b584220ace0c8',
-      did: 'did:ethr:goerli:0x03a1370d4dd249eabb23245aeb4aec988fbca598ff83db59144d89b3835371daca',
-      didKey: 'did:ethr:goerli:0x03a1370d4dd249eabb23245aeb4aec988fbca598ff83db59144d89b3835371daca#controllerKey',
+      ...opMock,
+      didKey: `${opMock.did}#controller`,
+    };
+    const rpMock = await mockedGetEnterpriseAuthToken('RP');
+    const rpMockEntity = {
+      ...rpMock,
+      didKey: `${rpMock.did}#controller`,
     };
 
     const resolver = getResolver('ethr');
@@ -1381,6 +1388,7 @@ describe('RP and OP interaction should', () => {
       .withRedirectUri(EXAMPLE_REDIRECT_URL)
       .withRequestBy(PassBy.VALUE)
       .withCreateJwtCallback(internalSignature(rpMockEntity.hexPrivateKey, rpMockEntity.did, rpMockEntity.didKey, SigningAlgo.ES256K))
+      .withVerifyJwtCallback(getVerifyJwtCallback(resolver))
       .withAuthorizationEndpoint('www.myauthorizationendpoint.com')
       .withClientMetadata({
         client_id: WELL_KNOWN_OPENID_FEDERATION,
@@ -1487,10 +1495,10 @@ describe('RP and OP interaction should', () => {
   });
 
   it('should register authorization request on create', async () => {
+    const rpMock = await mockedGetEnterpriseAuthToken('RP');
     const rpMockEntity = {
-      hexPrivateKey: '2bbd6a78be9ab2193bcf74aa6d39ab59c1d1e2f7e9ef899a38fb4d94d8aa90e2',
-      did: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024',
-      didKey: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024#controllerKey',
+      ...rpMock,
+      didKey: `${rpMock.did}#controller`,
     };
 
     const eventEmitter = new EventEmitter();
@@ -1566,10 +1574,10 @@ describe('RP and OP interaction should', () => {
   });
 
   it('should register authorization request on create with uri', async () => {
+    const rpMock = await mockedGetEnterpriseAuthToken('RP');
     const rpMockEntity = {
-      hexPrivateKey: '2bbd6a78be9ab2193bcf74aa6d39ab59c1d1e2f7e9ef899a38fb4d94d8aa90e2',
-      did: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024',
-      didKey: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024#controllerKey',
+      ...rpMock,
+      didKey: `${rpMock.did}#controller`,
     };
     const eventEmitter = new EventEmitter();
     const replayRegistry = new InMemoryRPSessionManager(eventEmitter);
@@ -1617,15 +1625,15 @@ describe('RP and OP interaction should', () => {
 
   it('should register authorization response on successful verification', async () => {
     await nock.cleanAll();
-    const rpMockEntity = {
-      hexPrivateKey: '2bbd6a78be9ab2193bcf74aa6d39ab59c1d1e2f7e9ef899a38fb4d94d8aa90e2',
-      did: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024',
-      didKey: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024#controllerKey',
-    };
+    const opMock = await mockedGetEnterpriseAuthToken('OP');
     const opMockEntity = {
-      hexPrivateKey: '73d24dd0fb69abdc12e7a99d8f9a970fdc8ad90598cc64cff35b584220ace0c8',
-      did: 'did:ethr:goerli:0x03a1370d4dd249eabb23245aeb4aec988fbca598ff83db59144d89b3835371daca',
-      didKey: 'did:ethr:goerli:0x03a1370d4dd249eabb23245aeb4aec988fbca598ff83db59144d89b3835371daca#controllerKey',
+      ...opMock,
+      didKey: `${opMock.did}#controller`,
+    };
+    const rpMock = await mockedGetEnterpriseAuthToken('RP');
+    const rpMockEntity = {
+      ...rpMock,
+      didKey: `${rpMock.did}#controller`,
     };
 
     const eventEmitter = new EventEmitter();
@@ -1638,11 +1646,11 @@ describe('RP and OP interaction should', () => {
       .withResponseType(ResponseType.ID_TOKEN)
       .withRedirectUri(EXAMPLE_REDIRECT_URL)
       .withPresentationVerification(presentationVerificationCallback)
-
       .withRevocationVerification(RevocationVerification.NEVER)
       .withRequestBy(PassBy.REFERENCE, EXAMPLE_REFERENCE_URL)
       .withIssuer(ResponseIss.SELF_ISSUED_V2)
       .withCreateJwtCallback(internalSignature(rpMockEntity.hexPrivateKey, rpMockEntity.did, rpMockEntity.didKey, SigningAlgo.ES256K))
+      .withVerifyJwtCallback(getVerifyJwtCallback(resolver))
       .withClientMetadata({
         client_id: WELL_KNOWN_OPENID_FEDERATION,
         idTokenSigningAlgValuesSupported: [SigningAlgo.EDDSA],
@@ -1713,12 +1721,16 @@ describe('RP and OP interaction should', () => {
   });
 
   it('should set error status on failed authorization response verification', async () => {
-    const rpMockEntity = {
-      hexPrivateKey: '2bbd6a78be9ab2193bcf74aa6d39ab59c1d1e2f7e9ef899a38fb4d94d8aa90e2',
-      did: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024',
-      didKey: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024#controllerKey',
+    const opMock = await mockedGetEnterpriseAuthToken('OP');
+    const opMockEntity = {
+      ...opMock,
+      didKey: `${opMock.did}#controller`,
     };
-    const opMockEntity = await mockedGetEnterpriseAuthToken('ACME OP');
+    const rpMock = await mockedGetEnterpriseAuthToken('RP');
+    const rpMockEntity = {
+      ...rpMock,
+      didKey: `${rpMock.did}#controller`,
+    };
     const eventEmitter = new EventEmitter();
     const replayRegistry = new InMemoryRPSessionManager(eventEmitter);
 

@@ -24,7 +24,7 @@ import {
 
 import { getVerifyJwtCallback, internalSignature } from './DidJwtTestUtils';
 import { getResolver } from './ResolverTestUtils';
-import { WELL_KNOWN_OPENID_FEDERATION } from './TestUtils';
+import { mockedGetEnterpriseAuthToken, WELL_KNOWN_OPENID_FEDERATION } from './TestUtils';
 import {
   VERIFIER_LOGO_FOR_CLIENT,
   VERIFIER_NAME_FOR_CLIENT,
@@ -120,16 +120,15 @@ function getVCs(): OriginalVerifiableCredential[] {
 
 describe('RP and OP interaction should', () => {
   it('succeed when calling with presentation definitions and right verifiable presentation', async () => {
-    const rpMockEntity = {
-      hexPrivateKey: '2bbd6a78be9ab2193bcf74aa6d39ab59c1d1e2f7e9ef899a38fb4d94d8aa90e2',
-      did: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024',
-      didKey: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024#controllerKey',
-    };
-
+    const opMock = await mockedGetEnterpriseAuthToken('OP');
     const opMockEntity = {
-      hexPrivateKey: '73d24dd0fb69abdc12e7a99d8f9a970fdc8ad90598cc64cff35b584220ace0c8',
-      did: 'did:ethr:goerli:0x03a1370d4dd249eabb23245aeb4aec988fbca598ff83db59144d89b3835371daca',
-      didKey: 'did:ethr:goerli:0x03a1370d4dd249eabb23245aeb4aec988fbca598ff83db59144d89b3835371daca#controllerKey',
+      ...opMock,
+      didKey: `${opMock.did}#controller`,
+    };
+    const rpMock = await mockedGetEnterpriseAuthToken('RP');
+    const rpMockEntity = {
+      ...rpMock,
+      didKey: `${rpMock.did}#controller`,
     };
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -148,7 +147,7 @@ describe('RP and OP interaction should', () => {
       .withPresentationVerification(presentationVerificationCallback)
       .withRevocationVerification(RevocationVerification.NEVER)
       .withRequestBy(PassBy.VALUE)
-      .withCreateJwtCallback(internalSignature(rpMockEntity.hexPrivateKey, rpMockEntity.did, rpMockEntity.didKey, SigningAlgo.ES256K))
+      .withCreateJwtCallback(internalSignature(rpMockEntity.hexPrivateKey, rpMockEntity.did, `${rpMockEntity.did}#controller`, SigningAlgo.ES256K))
       .withAuthorizationEndpoint('www.myauthorizationendpoint.com')
       .withVerifyJwtCallback(getVerifyJwtCallback(resolver))
       .withClientMetadata({
@@ -159,7 +158,7 @@ describe('RP and OP interaction should', () => {
         vpFormatsSupported: { jwt_vc: { alg: [SigningAlgo.EDDSA] } },
         scopesSupported: [Scope.OPENID_DIDAUTHN, Scope.OPENID],
         subjectTypesSupported: [SubjectType.PAIRWISE],
-        subject_syntax_types_supported: ['did', 'did:ethr'],
+        subject_syntax_types_supported: ['did', 'did:key'],
         passBy: PassBy.VALUE,
         logo_uri: VERIFIER_LOGO_FOR_CLIENT,
         clientName: VERIFIER_NAME_FOR_CLIENT,
@@ -174,7 +173,7 @@ describe('RP and OP interaction should', () => {
       .withPresentationSignCallback(presentationSignCallback)
       .withExpiresIn(1000)
       .withHasher(hasher)
-      .withCreateJwtCallback(internalSignature(opMockEntity.hexPrivateKey, opMockEntity.did, opMockEntity.didKey, SigningAlgo.ES256K))
+      .withCreateJwtCallback(internalSignature(opMockEntity.hexPrivateKey, opMockEntity.did, `${opMockEntity.did}#controller`, SigningAlgo.ES256K))
       .withVerifyJwtCallback(getVerifyJwtCallback(resolver))
       .withRegistration({
         authorizationEndpoint: 'www.myauthorizationendpoint.com',
@@ -242,17 +241,8 @@ describe('RP and OP interaction should', () => {
   });
 
   it('succeed when calling with presentation definitions and right verifiable presentation without id token', async () => {
-    const rpMockEntity = {
-      hexPrivateKey: '2bbd6a78be9ab2193bcf74aa6d39ab59c1d1e2f7e9ef899a38fb4d94d8aa90e2',
-      did: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024',
-      didKey: 'did:ethr:goerli:0x038f8d21b0446c46b05aecdc603f73831578e28857adba14de569f31f3e569c024#controllerKey',
-    };
-
-    const opMockEntity = {
-      hexPrivateKey: '73d24dd0fb69abdc12e7a99d8f9a970fdc8ad90598cc64cff35b584220ace0c8',
-      did: 'did:ethr:goerli:0x03a1370d4dd249eabb23245aeb4aec988fbca598ff83db59144d89b3835371daca',
-      didKey: 'did:ethr:goerli:0x03a1370d4dd249eabb23245aeb4aec988fbca598ff83db59144d89b3835371daca#controllerKey',
-    };
+    const opMockEntity = await mockedGetEnterpriseAuthToken('OP');
+    const rpMockEntity = await mockedGetEnterpriseAuthToken('RP');
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const presentationVerificationCallback: PresentationVerificationCallback = async (_args) => {
@@ -271,7 +261,7 @@ describe('RP and OP interaction should', () => {
       .withPresentationVerification(presentationVerificationCallback)
       .withRevocationVerification(RevocationVerification.NEVER)
       .withRequestBy(PassBy.VALUE)
-      .withCreateJwtCallback(internalSignature(rpMockEntity.hexPrivateKey, rpMockEntity.did, rpMockEntity.didKey, SigningAlgo.ES256K))
+      .withCreateJwtCallback(internalSignature(rpMockEntity.hexPrivateKey, rpMockEntity.did, `${rpMockEntity.did}#controller`, SigningAlgo.ES256K))
       .withVerifyJwtCallback(getVerifyJwtCallback(resolver))
       .withAuthorizationEndpoint('www.myauthorizationendpoint.com')
       .withClientMetadata({
@@ -281,7 +271,7 @@ describe('RP and OP interaction should', () => {
         responseTypesSupported: [ResponseType.VP_TOKEN],
         vpFormatsSupported: { jwt_vc: { alg: [SigningAlgo.EDDSA] } },
         subjectTypesSupported: [SubjectType.PAIRWISE],
-        subject_syntax_types_supported: ['did', 'did:ethr'],
+        subject_syntax_types_supported: ['did', 'did:key'],
         passBy: PassBy.VALUE,
         logo_uri: VERIFIER_LOGO_FOR_CLIENT,
         clientName: VERIFIER_NAME_FOR_CLIENT,
@@ -295,7 +285,7 @@ describe('RP and OP interaction should', () => {
       .withPresentationSignCallback(presentationSignCallback)
       .withExpiresIn(1000)
       .withHasher(hasher)
-      .withCreateJwtCallback(internalSignature(opMockEntity.hexPrivateKey, opMockEntity.did, opMockEntity.didKey, SigningAlgo.ES256K))
+      .withCreateJwtCallback(internalSignature(opMockEntity.hexPrivateKey, opMockEntity.did, `${opMockEntity.did}#controller`, SigningAlgo.ES256K))
       .withVerifyJwtCallback(getVerifyJwtCallback(resolver))
       .withRegistration({
         authorizationEndpoint: 'www.myauthorizationendpoint.com',
@@ -321,7 +311,7 @@ describe('RP and OP interaction should', () => {
       correlationId: '1234',
       nonce: 'qBrR7mqnY3Qr49dAZycPF8FzgE83m6H0c2l0bzP4xSg',
       state: 'b32f0087fc9816eb813fd11f',
-      jwtIssuer: { method: 'did', alg: SigningAlgo.ES256K, didUrl: rpMockEntity.didKey },
+      jwtIssuer: { method: 'did', alg: SigningAlgo.ES256K, didUrl: `${rpMockEntity.did}#controller` },
     });
 
     // Let's test the parsing
@@ -349,7 +339,7 @@ describe('RP and OP interaction should', () => {
       jwtIssuer: {
         method: 'did',
         alg: SigningAlgo.ES256K,
-        didUrl: opMockEntity.didKey,
+        didUrl: `${rpMockEntity.did}#controller`,
       },
       presentationExchange: {
         verifiablePresentations: [verifiablePresentationResult.verifiablePresentation],
